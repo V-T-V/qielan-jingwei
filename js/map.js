@@ -4,14 +4,36 @@
 
 const QLMAP = (() => {
   let map, selId = null, hlId = null, volFilter = null;
-  let onTemple = null, onGate = null, onWard = null, onOffice = null;
+  let onTemple = null, onGate = null, onWard = null, onOffice = null, onWestStop = null;
+  let scene = "city";
   const layers = {};
+  let westLayers = null;
 
   const ll = p => [p[1], p[0]];                       /* [x,y] → latLng */
   const volColor = v => VOL_COLORS[v] || "#5a8368";
   const radiusOf = t => Math.max(5, Math.min(15, Math.sqrt(t.chars / 60)));
 
   function init() {
+    initCity();
+  }
+
+  /* ── 场景切换：城图（CRS.Simple）⇄ 西行（WGS84 无瓦片示意） ── */
+  function setScene(s) {
+    if (s === scene) return;
+    scene = s;
+    if (map) { map.remove(); map = null; }
+    westLayers = null;
+    Object.keys(layers).forEach(k => { layers[k] = null; });
+    if (s === "west") initWest();
+    else initCity();
+  }
+
+  function toCity() {
+    if (scene !== "city" && map) setScene("city");
+  }
+
+  function initCity() {
+    scene = "city";
     map = L.map("map", {
       crs: L.CRS.Simple,
       attributionControl: false, zoomControl: true,
@@ -27,6 +49,46 @@ const QLMAP = (() => {
     renderGates();
     renderTemples();
     renderAux();
+  }
+
+  /* ── 西行场景：宋云行纪 20 站小比例尺示意（无外部瓦片，自绘底） ── */
+  function initWest() {
+    scene = "west";
+    const stops = window.QL_SONGYUN ? window.QL_SONGYUN.stops : [];
+    map = L.map("map", {
+      attributionControl: false, zoomControl: true,
+      minZoom: 3, maxZoom: 8, zoomSnap: 0.5,
+      center: [36.5, 92], zoom: 4,
+      maxBounds: L.latLngBounds([10, 50], [55, 130]), maxBoundsViscosity: .6,
+    });
+    westLayers = { route: L.layerGroup().addTo(map), stop: L.layerGroup().addTo(map) };
+    if (!stops.length) return;
+    const pts = stops.map(s => s.wgs);
+    L.polyline(pts, { color: "#8e2b22", weight: 2.4, opacity: .85,
+                      dashArray: "1 7", lineCap: "round" })
+      .bindTooltip("宋云使西域 · 神龟元年—正光二年（518–521）", { sticky: true })
+      .addTo(westLayers.route);
+    stops.forEach((s, i) => {
+      const edge = i === 0 || i === stops.length - 1;
+      L.circleMarker(s.wgs, {
+        radius: edge ? 6 : 4.5, color: "#f6f3e6", weight: 1.6,
+        fillColor: edge ? "#7e2b1f" : "#a8874a", fillOpacity: .95, className: "westdot",
+      }).bindTooltip(
+        `<b style="font-family:KaiTi,serif;font-size:14px">${s.name}</b>` +
+        ` <span style="color:#84929a">${s.cat}</span><br>` +
+        `<span class="tipatt">今地：${s.today}</span><br>` +
+        `${s.li ? "原文里程 " + s.li + " · " : ""}src:derived·infer` +
+        `<br><span class="tipatt">「${s.cite.slice(0, 46)}…」</span>`,
+        { direction: "top", opacity: .96, className: "ftip" })
+        .on("click", () => onWestStop && onWestStop(s, i))
+        .addTo(westLayers.stop);
+      L.marker([s.wgs[0] + 0.25, s.wgs[1]], {
+        icon: L.divIcon({ className: "", iconSize: null,
+                          html: `<span class="westlab${edge ? " edge" : ""}">${s.name}</span>` }),
+        interactive: false,
+      }).addTo(westLayers.stop);
+    });
+    map.fitBounds(L.latLngBounds(pts).pad(0.18));
   }
 
   /* ── 城市骨架 ── */
@@ -101,6 +163,7 @@ const QLMAP = (() => {
 
   /* ── 伽蓝点 ── */
   function renderTemples() {
+    if (scene !== "city" || !layers.temple) return;
     layers.temple.clearLayers();
     QLZ.temples.forEach(t => {
       if (volFilter && !volFilter.has(t.vol)) return;
@@ -167,16 +230,18 @@ const QLMAP = (() => {
 
   /* ── 选中 / 高亮 / 飞行 ── */
   function selectTemple(id, opt = {}) {
+    toCity();
     selId = id;
     renderTemples();
     const t = QLZ.temples.find(x => x.id === id);
-    if (t && opt.fly !== false) {
+    if (t && opt.fly !== false && map) {
       map.flyTo(ll(t.pos), Math.max(map.getZoom(), -0.4), { duration: .9 });
     }
     focusRing(t);
   }
 
   function focusRing(t) {
+    if (scene !== "city" || !layers.focus) return;
     layers.focus.clearLayers();
     if (!t) return;
     L.circleMarker(ll(t.pos), {
@@ -191,24 +256,36 @@ const QLMAP = (() => {
   }
 
   function flyTo(pos, zoom) {
+    toCity();
+    if (!map) return;
     map.flyTo(ll(pos), zoom != null ? zoom : Math.max(map.getZoom(), -0.4), { duration: .9 });
   }
 
   function fitAll() {
+    if (scene === "west" && map) {                    /* 西行场景：全程视图 */
+      const pts = (window.QL_SONGYUN ? window.QL_SONGYUN.stops : []).map(s => s.wgs);
+      if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.18));
+      return;
+    }
+    if (!map) return;
     map.fitBounds(L.latLngBounds(ll([-2700, -2400]), ll([5500, 5100])), { padding: [20, 20] });
   }
 
   function home() {
+    toCity();
+    if (!map) return;
     map.flyTo(ll(QL_CONF.homeView.center), QL_CONF.homeView.zoom, { duration: .8 });
   }
 
   return {
     init, selectTemple, highlight, flyTo, fitAll, home, renderTemples,
+    setScene, get scene() { return scene; },
     get map() { return map; },
     set onTemple(fn) { onTemple = fn; },
     set onGate(fn) { onGate = fn; },
     set onWard(fn) { onWard = fn; },
     set onOffice(fn) { onOffice = fn; },
+    set onWestStop(fn) { onWestStop = fn; },
     setVolFilter(vols) {
       /* vols: null=全部；Set(卷号) 则只显所选 */
       volFilter = vols;

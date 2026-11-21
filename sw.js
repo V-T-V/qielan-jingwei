@@ -3,19 +3,19 @@
    SHELL 外壳预存 · TEXTS 全文懒载（首查后整本离线）
    VERSION 与 index.html 的 ?v 同步递升（教训：勿加 ignoreSearch 把页面钉死旧版） */
 
-const VERSION = "v6";
+const VERSION = "v7";
 const SHELL = `qlg-${VERSION}-shell`;
 const TEXTS = `qlg-${VERSION}-texts`;
 
 const SHELL_FILES = [
   "./", "./index.html", "./manifest.json",
-  "./css/main.css?v=6",
+  "./css/main.css?v=7",
   "./vendor/leaflet.js", "./vendor/leaflet.css",
-  "./data/site_data.js?v=6", "./data/stats.js?v=6", "./data/sections.js?v=6",
+  "./data/site_data.js?v=7", "./data/stats.js?v=7", "./data/sections.js?v=7", "./data/songyun.js?v=7",
   "./icons/icon-192.png", "./icons/icon-512.png",
-  "./js/config.js?v=6", "./js/map.js?v=6", "./js/rail.js?v=6",
-  "./js/reader.js?v=6", "./js/search.js?v=6", "./js/stats.js?v=6",
-  "./js/bookmarks.js?v=6", "./js/app.js?v=6",
+  "./js/config.js?v=7", "./js/map.js?v=7", "./js/rail.js?v=7",
+  "./js/reader.js?v=7", "./js/search.js?v=7", "./js/stats.js?v=7",
+  "./js/bookmarks.js?v=7", "./js/export.js?v=7", "./js/app.js?v=7",
 ];
 
 self.addEventListener("install", e => {

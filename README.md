@@ -6,25 +6,34 @@
 
 ```
 伽蓝经纬/
-  index.html              # 入口（舆图 / 巡城 / 名录 / 计量 / 关于 五模式）
+  index.html              # 入口（舆图 / 巡城 / 名录 / 计量 / 西行 / 关于）
   data/site_data.js       # 城市骨架 + 43 伽蓝 + 13 墙门 2 宫门 + 24 里坊市 + 12 衙署（管线生成）
   data/sections.js        # 巡城阅读块（53 块：伽蓝条目 + 里坊叙事 + 宋云行纪 + 京师总述）
   data/stats.js           # 计量（docs/stats.json 转抄——前端只读脚本产物）
+  data/xref_sjz.js        # 水经互查桥（build_xref_sjz.py 生成，计量·引水经注页签懒加载）
+  data/songyun.js         # 宋云西行 20 站结构化（build_songyun.py 生成）
   data/text/v0..v5.js     # 全文检索层（懒加载；序+五卷纯正文）
-  tools/                  # 管线：fetch_text → parse_entries → stats → build_data → lint
-  tests/                  # 断言页（数据 22 项 · 巡城 12 项）+ run_tests.py
-  docs/ANALYSIS.md        # 文本计量（凡数字必出自脚本）· docs/img/ 截图证据
+  exports/                # 城图导出产物（CSV×4·BOM / KML / GeoJSON，export_data.py 可复算）
+  tools/                  # 管线：fetch_text → parse_entries → stats → build_xref_sjz
+                          #        → build_songyun → build_data → build_paper_pdf → export_data → lint
+  tests/                  # 断言页（数据 22 项 · 巡城 12 项 · P2 20 项）+ run_tests.py
+  docs/ANALYSIS.md        # 文本计量（凡数字必出自脚本）
+  docs/伽蓝经纬-数字人文.pdf  # 研究论文（build_paper_pdf.py 排印，数字全出自脚本产物）
 ```
 
 ## 快速开始
 
 ```bash
-python -m http.server 9500 &      # 起本地服务
+python -m http.server 9500 &      # 起本地服务（互查桥深链需父目录同根服务，见下）
 python tools/fetch_text.py        # Phase 0 抓取（断点续抓，已缓存 raw 则重洗）
 python tools/parse_entries.py     # Phase 1 条目切分（典校篇目表逐一前缀校验）
 python tools/stats.py             # 计量 → docs/stats.json + ANALYSIS.md
-python tools/build_data.py        # Phase 2 城市骨架 + 坐标 + 前端产物
-python tools/lint.py              # 399 项确定性检查
+python tools/build_xref_sjz.py    # 水经互查桥（读姊妹站 SDJW，只读不写）
+python tools/build_songyun.py     # 宋云西行 20 站（站名在行纪原文逐一验真）
+python tools/build_data.py        # 城市骨架 + 坐标 + WGS84 锚点 + 前端产物
+python tools/build_paper_pdf.py   # 论文 PDF（ANALYSIS 改动后必重排，lint 哨兵联动）
+python tools/export_data.py       # exports/ 四表 CSV·KML·GeoJSON（与前端按钮同口径）
+python tools/lint.py              # 452 项确定性检查
 python run_tests.py               # lint + 数据断言 + 断言页清单
 ```
 
@@ -36,10 +45,31 @@ python run_tests.py               # lint + 数据断言 + 断言页清单
 | 2 | **按卷巡城**——右幅按卷滚读原文，滚到某伽蓝条目地图飞行高亮该点；宋云行纪/京师总述独立成块 | 「巡城」· `#m=read#juan=2` |
 | 3 | **深链**——`#gl=永宁寺`（详情）`#juan=N`（卷）`#gate=建春门`（城门），刷新可复原 | 任意点击写回 |
 | 4 | **伽蓝详情**——位置原文句 + 示意坐标（src:derived）+ 依据 + 原文全文 + 名气指数 | 点任一伽蓝 |
-| 5 | **名录**——伽蓝/城门/里坊/衙署四表，皆带书证 | 「名录」 |
+| 5 | **名录**——伽蓝/城门/里坊/衙署四表，皆带书证；**⤓ 导出** CSV(BOM)/KML/GeoJSON（示意坐标逐行注明 src:derived） | 「名录」 |
 | 6 | **全文检索**——36KB 全书一次加载主线程扫描，命中定位巡城 | 顶栏 |
 | 7 | **计量**——卷篇幅×条数、佛寺出场频次、城门提及（数字全出自 stats.py） | 「计量」 |
-| 8 | 书签（LocalStorage）· 夜读 · TTS 巡城听书 · PWA 两级缓存离线 · 漫游 | 底栏 |
+| 8 | **引水经注**——站际互查桥：本书提及水道（洛水/穀水/阳渠）↔ 谷水注/洛水注中的伽蓝记名物，双向计数 + 样例对读 + 「↗循水」深链姊妹站水道经纬 | 「计量」→「引水经注」 |
+| 9 | **宋云西行**——卷五行纪 5,651 字结构化 20 站（赤岭—于阗—葱岭—乌场—乾陀罗），WGS84 小比例尺丝路示意（src:derived·infer）+ 站站书证 + 沿线巡读 | 底栏「◈ 西行」· `#m=west` |
+| 10 | 书签（LocalStorage）· 夜读 · TTS 巡城听书 · PWA 两级缓存离线 · 漫游 | 底栏 |
+
+## P2 契约（论文 · 导出 · 互查桥 · 西行）
+
+- **论文 PDF**：`docs/伽蓝经纬-数字人文.pdf`（build_paper_pdf.py 排印）——数字运行时读自
+  stats.json / site_data.js / xref_sjz.js，不手抄；**lint 哨兵联动**：ANALYSIS.md 新于 PDF 即红。
+- **城图导出**：伽蓝 43 / 城门 15 / 里坊市 24 / 衙署宫室 12 四表——CSV（带 BOM）×4 +
+  KML + GeoJSON（各 94 点）；**前端名录页按钮与 tools/export_data.py 同口径**（wgs 全出自
+  build_data.py 管线锚点换算，单一事实源）；示意坐标在每一行/每个要素注明 `src:derived` 与依据；
+  lint 校验行数与要素数一致。
+- **水经互查桥**（伽蓝×水道经纬·谷水段）：`tools/build_xref_sjz.py` 读姊妹站
+  `D:\W_A_W\SDJW` 的 rivers.json（**只读，绝不写入**），产 `data/xref_sjz.js`。
+  A 侧本书提及水道 3 种 13 次（穀水≡谷水异体折算；决水/深水/若水/渠水四名假阳性如实排除）；
+  B 侧谷水注 10,723 字/洛水注 6,433 字中命中伽蓝记名物 21 处（城门 12——津阳/承明无对应）、
+  对读样例 10 对。**↗循水深链用相对兄弟路径 `../SDJW/#r=<水道id>`**——约定
+  **父目录同根服务**：在 `D:\W_A_W` 起 `python -m http.server 8000` 后，
+  `http://127.0.0.1:8000/LYGL/` 与 `/SDJW/` 同源可达（各站 9500/9300 独立服务下深链退化为站内提示）。
+- **宋云西行**：`tools/build_songyun.py` 产 `data/songyun.js`——20 站站名在行纪原文逐一验真
+  （命不中即报错退出），今地考订与坐标全量 `src:derived·conf:infer`（量级示意，非实测）；
+  波斯一站地望存疑如实注记；底栏「◈ 西行」切换 WGS84 无瓦片示意场景，`#m=west` 深链。
 
 ## 数据边界（诚实口径）
 

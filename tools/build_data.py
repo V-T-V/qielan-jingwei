@@ -20,6 +20,21 @@ VER = "1"
 LI = 440          # 1 北魏里 ≈ 440m
 W, H = 2800, 3700  # 内城东西/南北
 
+# WGS84 锚点（导出 KML/GeoJSON/CSV 用；前后端同口径，勿单侧改动）：
+#   内城西南角(0,0) → (lat0, lng0)。依阊阖门/永宁寺塔/白马寺遗址公开考古坐标反推
+#   （阊阖门遗址≈34.7315N,112.6115E ↔ 示意(1400,2550)），量级推算 conf:infer。
+#   换算：lat = lat0 + y/111320；lng = lng0 + x/(111320·cos(lat0·π/180))
+ANCHOR = {"lat0": 34.7086, "lng0": 112.5962,
+          "note": "示意平面锚定WGS84：内城西南角→34.7086N,112.5962E（汉魏洛阳故城遗址，量级推算infer）；"
+                  "lat=lat0+y/111320，lng=lng0+x/(111320·cos(lat0))"}
+
+
+def to_wgs(x, y):
+    import math
+    lat = ANCHOR["lat0"] + y / 111320.0
+    lng = ANCHOR["lng0"] + x / (111320.0 * math.cos(math.radians(ANCHOR["lat0"])))
+    return round(lat, 6), round(lng, 6)
+
 # ── 城门（示意坐标；att=原文书证）──────────────────────
 # 序（原序）自载门谱：东三门·南四门·西四门·北二门=13 墙门；
 # 另有宫城门二（阊阖=宫前正门、千秋=宫西门），wall="宫"，不入 13 之数。
@@ -218,28 +233,32 @@ def main():
             raise SystemExit(f"坐标表缺 卷{b['vol']}:{b['name']}")
         pos, loc, conf = TEMPLE_POS[key]
         jx, jy = jitter(b["name"] + str(b["vol"]))
+        fpos = [pos[0] + int(jx * 0.6), pos[1] + int(jy * 0.6)]
         temples.append({
             "id": b["id"], "name": b["name"], "vol": b["vol"],
-            "pos": [pos[0] + int(jx * 0.6), pos[1] + int(jy * 0.6)],
+            "pos": fpos, "wgs": to_wgs(*fpos),
             "loc": loc, "conf": conf, "src": "derived",
             "chars": b["chars"], "mention": mention_all.get(b["name"], 0),
         })
 
     gates = [{"name": n, "disp": (n[1:] + "·宫门") if n.startswith("宫") else n,
-              "wall": w_, "pos": p, "att": a, "src": "derived",
+              "wall": w_, "pos": p, "att": a, "src": "derived", "wgs": to_wgs(*p),
               "mention": stats["gate_mentions"].get(n.replace("宫阊阖门", "阊阖门"), 0)}
              for n, w_, p, a in GATES]
     wards = [{"name": n, "vol": v, "pos": [p[0] + jitter(n, 3)[0], p[1] + jitter(n, 5)[1]],
               "att": a, "src": "derived"} for n, v, p, a in WARDS]
-    offices = [{"name": n, "vol": v, "pos": p, "att": a, "src": "derived"}
-               for n, v, p, a in OFFICES]
-    landmarks = [{"name": n, "vol": v, "pos": p, "att": a, "src": "derived"}
-                 for n, v, p, a in LANDMARKS]
+    for w_ in wards:
+        w_["wgs"] = to_wgs(*w_["pos"])
+    offices = [{"name": n, "vol": v, "pos": p, "att": a, "src": "derived",
+                "wgs": to_wgs(*p)} for n, v, p, a in OFFICES]
+    landmarks = [{"name": n, "vol": v, "pos": p, "att": a, "src": "derived",
+                  "wgs": to_wgs(*p)} for n, v, p, a in LANDMARKS]
 
     city = {
         "crs": "simple-m",
         "note": "示意城市平面（米）：内城 2,800×3,700，1里=440m；依汉魏洛阳故城考古常识布点，全部 derived",
         "li_m": LI,
+        "anchor": ANCHOR,
         "wall": [[60, 0], [2740, 0], [2800, 200], [2800, 3480], [2720, 3700],
                  [200, 3700], [60, 3560], [0, 3200], [0, 240], [60, 0]],
         "guo": {"rect": [[-2620, -1660], [5460, -1660], [5460, 4980], [-2620, 4980]],

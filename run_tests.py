@@ -1,7 +1,7 @@
 """伽蓝经纬 · 回归入口
 python run_tests.py
-  1) tools/lint.py          确定性静态检查（60+ 项）
-  2) 数据断言（python 版，与 tests/assert_data.html 同源）
+  1) tools/lint.py          确定性静态检查（450+ 项：含文档同步/导出同口径/P2 哨兵）
+  2) 数据断言（python 版，与 tests/assert_data.html 同源 + P2：桥/导出/西行/PDF）
   3) 浏览器断言页提醒（tests/assert_*.html，http 服务下打开，title=PASS 即绿）
 """
 import json
@@ -46,9 +46,25 @@ def data_asserts():
     assert len(stats["gate_mentions"]) >= 13, "城门提及表不足 13 门"
     fr = json.load(open(os.path.join(ROOT, "data", "fetch_report.json"), encoding="utf-8"))
     assert len(fr["vols"]) == 6 and fr["total_chars"] > 35000, "抓取报告异常"
+
+    # ── P2：论文同步 · 互查桥 · 导出 · 西行 ──
+    assert os.path.exists(os.path.join(ROOT, "docs", "伽蓝经纬-数字人文.pdf")), \
+        "论文 PDF 缺失（tools/build_paper_pdf.py）"
+    xt = open(os.path.join(ROOT, "data", "xref_sjz.js"), encoding="utf-8").read()
+    head = "window.QL_SJZ = "
+    xr = json.loads(xt[xt.find(head) + len(head):].rstrip().rstrip(";"))
+    assert xr["totals"]["placesHit"] >= 15 and xr["totals"]["pairs"] >= 6, "互查桥计数不足"
+    syt = open(os.path.join(ROOT, "data", "songyun.js"), encoding="utf-8").read()
+    head2 = "window.QL_SONGYUN = "
+    sy = json.loads(syt[syt.find(head2) + len(head2):].rstrip().rstrip(";"))
+    assert sy["meta"]["stops"] == 20 and sy["meta"]["chars"] == m["songyun_chars"], "西行结构化异常"
+    kml = open(os.path.join(ROOT, "exports", "伽蓝经纬-城图.kml"), encoding="utf-8").read()
+    assert kml.count("<Placemark>") == 43 + 15 + 24 + 12, "KML 要素数与四表不齐"
     print(f"伽蓝 43（11/12/8/10/2）· 宋云行纪 {m['songyun_chars']:,} 字 · "
           f"总 {stats['total_chars']:,} 字 · 御道 {stats['words']['御道']} 次 · "
           f"城门提及 {len(stats['gate_mentions'])} 门")
+    print(f"P2：桥命中 {xr['totals']['placesHit']}/对读 {xr['totals']['pairs']} 对 · "
+          f"西行 {sy['meta']['stops']} 站 · 导出 94 点（CSV×4+KML+GeoJSON） · 论文 PDF 在账")
 
 
 def browser_pages():

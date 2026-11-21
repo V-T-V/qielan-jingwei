@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>伽蓝经纬 · P2 断言</title>
+<style>
+body{font-family:KaiTi,serif;background:#241f17;color:#e8e0c8;padding:24px;line-height:1.8}
+h2{font-weight:400;letter-spacing:4px;border-bottom:1px solid #a8874a;padding-bottom:6px}
+.pass{color:#8fae8d}.fail{color:#e08a7e;font-weight:bold}
+li{list-style:none;margin:4px 0}
+</style>
+</head>
+<body>
+<h2>P2 断言 · 互查桥 / 导出 / 宋云西行 / 论文同步</h2>
+<ul id="out"></ul>
+<script src="../data/site_data.js?v=7"></script>
+<script src="../data/stats.js?v=7"></script>
+<script src="../data/xref_sjz.js?v=7"></script>
+<script src="../data/songyun.js?v=7"></script>
+<script src="../js/export.js?v=7"></script>
+<script>
+const out = document.getElementById("out");
+let n = 0, bad = 0;
+function assert(cond, label) {
+  n++;
+  const li = document.createElement("li");
+  li.textContent = (cond ? "✓ " : "✗ ") + label;
+  li.className = cond ? "pass" : "fail";
+  if (!cond) bad++;
+  out.appendChild(li);
+}
+
+/* ── 互查桥 ── */
+assert(!!window.QL_SJZ, "xref_sjz.js 载入（window.QL_SJZ）");
+const X = window.QL_SJZ, T = X.totals;
+assert(T.waterKinds === 3 && T.waterMentions >= 10,
+  `A 侧 ${T.waterKinds} 水道 ${T.waterMentions} 次（洛水/谷水/阳渠）`);
+assert(X.waters.every(w => w.href.startsWith("../SDJW/#r=")),
+  "全部 ↗循水深链为相对兄弟路径 ../SDJW/#r=<id>");
+assert(X.waters.some(w => w.forms.includes("穀水")),
+  "穀水→谷水 异体折算在列");
+assert(T.placesHit >= 15 && T.placesNoHit > 0,
+  `B 侧命中 ${T.placesHit} · 无对应如实计 ${T.placesNoHit}`);
+assert(T.placeKinds["城门"] >= 11, `谷水注城门命中 ${T.placeKinds["城门"]} 门`);
+assert(T.pairs >= 6, `样例对读 ${T.pairs} 对`);
+const yn = X.pairs.find(p => p.name === "永宁寺");
+assert(!!yn && yn.ql.includes("熙平元年") && yn.sjz.includes("熙平中"),
+  "永宁寺对读：伽蓝记「熙平元年」× 谷水注「熙平中」");
+assert(X.excluded.length === 4, "同名假阳性排除 4 名（决水/深水/若水/渠水）");
+
+/* ── 城图导出（模块与锚点口径） ── */
+assert(typeof QLEXPORT === "object" && ["csv", "kml", "geojson"]
+  .every(k => typeof QLEXPORT[k] === "function"), "QLEXPORT 三格式函数在");
+const A = QLZ.city.anchor;
+assert(A && A.lat0 > 34.7 && A.lat0 < 34.72 && A.lng0 > 112.59 && A.lng0 < 112.6,
+  `WGS84 锚点 ${A.lat0},${A.lng0}（内城西南角）`);
+assert(QLZ.temples.every(t => Array.isArray(t.wgs) && t.wgs.length === 2),
+  "四表全量 wgs 锚定换算字段（43 伽蓝验）");
+const ynT = QLZ.temples.find(t => t.name === "永宁寺");
+assert(Math.abs(ynT.wgs[0] - 34.727) < 0.003 && Math.abs(ynT.wgs[1] - 112.610) < 0.003,
+  `永宁寺 wgs ${ynT.wgs} 落永宁寺塔遗址量级（34.728,112.615）`);
+assert(QLZ.gates.every(g => g.wgs && g.src === "derived"), "城门 wgs 且 src:derived");
+
+/* ── 宋云西行 ── */
+assert(!!window.QL_SONGYUN, "songyun.js 载入（window.QL_SONGYUN）");
+const SY = window.QL_SONGYUN;
+assert(SY.meta.stops === 20, `西行 ${SY.meta.stops} 站`);
+assert(SY.meta.chars === QL_STATS.songyun_chars,
+  `行纪字数 ${SY.meta.chars} 与 stats 一致`);
+assert(SY.stops.every(s => s.cite && s.today && Array.isArray(s.wgs)),
+  "每站有书证+今地考订+wgs");
+assert(SY.stops.every(s => s.src === "derived" && s.conf === "infer"),
+  "西行坐标全量 src:derived·infer");
+const qitou = SY.stops.find(s => s.name === "乾陀罗城");
+assert(qitou && Math.abs(qitou.wgs[0] - 34.01) < 0.05, "终点乾陀罗城（白沙瓦量级）");
+assert(SY.stops.filter(s => s.li).length >= 5, "原文明载里程 ≥ 5 段");
+assert(SY.stops.some(s => s.today.includes("存疑")), "波斯地望存疑如实注记");
+
+document.title = bad ? "FAIL" : "PASS";
+out.insertAdjacentHTML("beforeend",
+  `<li>—— ${n} 项 · ${bad ? bad + " 败" : "全绿"} ——</li>`);
+</script>
+</body>
+</html>

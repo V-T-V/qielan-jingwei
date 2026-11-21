@@ -6,8 +6,9 @@ const QLAPP = (() => {
   const MODE_NOTE = {
     map: "四十三伽蓝 · 十三门 · 示意城市平面",
     read: "按卷巡城 · 滚动文本，地图随行",
-    directory: "伽蓝名录 · 城市骨架名物",
-    stats: "文本计量 · 数字出自脚本",
+    directory: "伽蓝名录 · 城市骨架名物 · 可导出",
+    stats: "文本计量 · 引水经注互查",
+    west: "宋云西行 · 行纪二十站示意（src:derived）",
     about: "关于 · 数据与坐标边界",
   };
 
@@ -16,7 +17,7 @@ const QLAPP = (() => {
     if (ensureSections._p) return ensureSections._p;
     ensureSections._p = new Promise((ok, bad) => {
       const s = document.createElement("script");
-      s.src = "data/sections.js?v=6";
+      s.src = "data/sections.js?v=7";
       s.onload = ok;
       s.onerror = () => bad(new Error("sections.js 加载失败"));
       document.head.appendChild(s);
@@ -30,6 +31,7 @@ const QLAPP = (() => {
     QLMAP.onGate = g => openGate(g);
     QLMAP.onWard = w => openAux(w, "里坊·市");
     QLMAP.onOffice = o => openAux(o, "衙署·宫室");
+    QLMAP.onWestStop = (s, i) => openWestStop(s, i);
     QLMAP.renderTemples();
     QLRAIL.build();
     QLSEARCH.init();
@@ -56,6 +58,9 @@ const QLAPP = (() => {
       b.addEventListener("click", () => act(b.dataset.mode)));
     document.getElementById("pclose").addEventListener("click", closePanel);
     document.getElementById("fitlink").addEventListener("click", () => QLMAP.fitAll());
+    const westBtn = document.getElementById("westlink");
+    if (westBtn) westBtn.addEventListener("click", () =>
+      QLMAP.scene === "west" ? westOff() : westOn());
     document.getElementById("wanderlink").addEventListener("click", () => {
       const ts = QLZ.temples;
       openTemple(ts[Math.floor(Math.random() * ts.length)].id);
@@ -99,8 +104,9 @@ const QLAPP = (() => {
     mode = m;
     document.querySelectorAll("#modes .mode").forEach(b =>
       b.classList.toggle("active", b.dataset.mode === m));
+    const btn = document.querySelector(`#modes .mode[data-mode="${m}"]`);
     document.getElementById("modelabel").textContent =
-      document.querySelector(`#modes .mode[data-mode="${m}"]`).textContent;
+      btn ? btn.textContent : (m === "west" ? "西行" : m);
     document.getElementById("modenote").textContent = MODE_NOTE[m] || "";
   }
 
@@ -110,6 +116,7 @@ const QLAPP = (() => {
     if (m === "directory") return openDirectory("temples");
     if (m === "read") return QLREADER.open(QLREADER.vol || 1);
     setMode(m);
+    if (QLMAP.scene !== "city") QLMAP.setScene("city");
     QLMAP.setVolFilter(null);
     closePanel(false);
   }
@@ -188,6 +195,70 @@ const QLAPP = (() => {
     location.hash = "#m=map";
   }
 
+  /* ── 宋云西行（小比例尺示意场景 · data/songyun.js 管线产物） ── */
+  function westOn() {
+    const SY = window.QL_SONGYUN;
+    if (!SY) return;
+    setMode("west");
+    QLMAP.setScene("west");
+    document.getElementById("vname").textContent = "宋云西行";
+    document.getElementById("vseal").textContent = "行纪";
+    document.getElementById("pmeta").innerHTML =
+      `<span>${SY.meta.stops} 站 · ${SY.meta.chars.toLocaleString()} 字行纪</span>` +
+      `<span>${SY.meta.years}</span>`;
+    const host = document.getElementById("pbody");
+    host.className = "";
+    host.innerHTML =
+      `<div class="sect"><h3>驼铃出京师</h3><p class="kv">神龟元年（518）冬，太后遣惠生向西域取经，` +
+      `宋云同行——洛阳的城市书写由此伸向丝路。行纪以里程范式（「从X西行N里至Y」）` +
+      `与城内门锚范式同卷并置。</p>` +
+      `<p class="kv small">${SY.meta.note}</p></div>` +
+      `<div class="sect"><h3>二十站 · 沿线巡读</h3>` +
+      SY.stops.map((s, i) =>
+        `<div class="drow" data-st="${i}"><span class="dn">${i + 1}. ${s.name}</span>` +
+        `<span class="dl">${s.today.slice(0, 14)}</span>` +
+        `<span class="dc">${s.li || ""}</span></div>`).join("") + `</div>`;
+    host.querySelectorAll(".drow[data-st]").forEach(r =>
+      r.addEventListener("click", () => openWestStop(SY.stops[+r.dataset.st], +r.dataset.st)));
+    document.getElementById("panel").classList.add("open");
+    location.hash = "#m=west";
+  }
+
+  function westOff() {
+    QLMAP.setScene("city");
+    setMode("map");
+    closePanel(false);
+    location.hash = "#m=map";
+  }
+
+  function openWestStop(s, i) {
+    const SY = window.QL_SONGYUN;
+    if (!s || !SY) return;
+    setMode("west");
+    if (QLMAP.scene !== "west") QLMAP.setScene("west");
+    if (QLMAP.map) QLMAP.map.flyTo(s.wgs, Math.max(QLMAP.map.getZoom(), 4.5), { duration: .8 });
+    document.getElementById("vname").textContent = s.name;
+    document.getElementById("vseal").textContent = "行纪";
+    document.getElementById("pmeta").innerHTML =
+      `<span>第 ${i + 1}/${SY.meta.stops} 站 · ${s.cat}</span>` +
+      `<span>坐标 ${s.wgs[0]}, ${s.wgs[1]} · src:${s.src} · ${s.conf}</span>`;
+    const host = document.getElementById("pbody");
+    host.className = "";
+    host.innerHTML =
+      `<div class="sect"><h3>今地考订</h3><p class="kv">${s.today}` +
+      `${s.li ? ` · 原文明载里程「${s.li}」` : " · 里程未明载"}</p>` +
+      `<p class="kv small">量级示意坐标（build_songyun.py 整编考订），非考古实测</p></div>` +
+      `<div class="sect"><h3>行纪书证</h3><p class="ctxt first">「${s.cite}」</p></div>` +
+      `<div class="btnrow"><button class="ftool" id="gostopread">▸ 巡读行纪全篇（卷五）</button>` +
+      `<button class="ftool" id="gowestback">◂ 回西行总览</button></div>`;
+    document.getElementById("panel").classList.add("open");
+    const gr = document.getElementById("gostopread");
+    if (gr) gr.addEventListener("click", () => QLREADER.open(5, SY.meta.blockId));
+    const gb = document.getElementById("gowestback");
+    if (gb) gb.addEventListener("click", westOn);
+    location.hash = "#m=west";
+  }
+
   /* ── 名录 ── */
   function openDirectory(kind = "temples") {
     setMode("directory");
@@ -201,6 +272,10 @@ const QLAPP = (() => {
     const tabs = `<div class="dtabs">` +
       [["temples", "伽蓝"], ["gates", "城门"], ["wards", "里坊·市"], ["offices", "衙署"]]
         .map(([k, n]) => `<button class="dtab${k === kind ? " cur" : ""}" data-k="${k}">${n}</button>`).join("") +
+      `<span class="dspacer"></span>` +
+      `<button class="dtab exp" id="csvdl" title="当前表 CSV（带 BOM，Excel 直开）· tools/export_data.py 同口径">⤓ CSV</button>` +
+      `<button class="dtab exp" id="kmldl" title="四表合一 · Google Earth · 示意坐标已注明">⤓ KML</button>` +
+      `<button class="dtab exp" id="gjdl" title="四表合一 · 通用 GIS · src:derived">⤓ GeoJSON</button>` +
       `</div>`;
     let body = "";
     if (kind === "temples") {
@@ -227,8 +302,14 @@ const QLAPP = (() => {
         `<span class="dl">卷${o.vol}</span><span class="dc"></span></div>`).join("");
     }
     host.innerHTML = tabs + `<div class="dlist">${body}</div>`;
-    host.querySelectorAll(".dtab").forEach(b =>
+    host.querySelectorAll(".dtab[data-k]").forEach(b =>
       b.addEventListener("click", () => openDirectory(b.dataset.k)));
+    const bc = document.getElementById("csvdl");
+    if (bc) bc.addEventListener("click", () => QLEXPORT.csv(kind));
+    const bk = document.getElementById("kmldl");
+    if (bk) bk.addEventListener("click", () => QLEXPORT.kml());
+    const bg = document.getElementById("gjdl");
+    if (bg) bg.addEventListener("click", () => QLEXPORT.geojson());
     host.querySelectorAll(".drow[data-id]").forEach(r =>
       r.addEventListener("click", () => openTemple(r.dataset.id)));
     host.querySelectorAll(".drow[data-gate]").forEach(r =>
@@ -272,9 +353,15 @@ const QLAPP = (() => {
 · 计量：数字全部出自 python tools/stats.py → docs/stats.json</p></div>
 <div class="sect"><h3>体例与致谢</h3><p class="kv">
 基建承水道经纬/方舆经纬姊妹站：深链/夜读/TTS/书签/PWA。文本源：国学导航。底图：自绘（无外部瓦片）。</p></div>
+<div class="sect"><h3>P2 · 论文 / 导出 / 互查 / 西行</h3><p class="kv">
+· 论文：docs/伽蓝经纬-数字人文.pdf（数字全出自脚本；改 ANALYSIS.md 必重排，lint 哨兵联动）<br>
+· 导出：名录页 ⤓ CSV(BOM)/KML/GeoJSON 与 tools/export_data.py 同口径；示意坐标逐行注明 src:derived<br>
+· 互查：「计量 → 引水经注」——谷水注/洛水注 ↔ 本书名物双向计数 + 对读样例；<br>
+　↗循水深链 ../SDJW/#r=&lt;水道id&gt;（相对兄弟路径，须父目录同根服务，README 注明）<br>
+· 西行：底栏「◈ 西行」——宋云行纪 20 站 WGS84 小比例尺示意（src:derived·infer，非实测）</p></div>
 <div class="sect"><h3>快速上手</h3><p class="kv">
 左列纲目点寺名 → 详情；「巡城」按卷滚动读原文，地图随文飞行；顶栏检全书；
-底栏「⚑ 漫游」随机巡礼一寺。</p></div>`;
+底栏「⚑ 漫游」随机巡礼一寺、「◈ 西行」出塞。</p></div>`;
     document.getElementById("panel").classList.add("open");
     location.hash = "#m=about";
   }
@@ -310,10 +397,12 @@ const QLAPP = (() => {
       if (g) { openGate(g); return; }
     }
     if (m === "stats") return QLSTATS.open();
+    if (m === "west") return westOn();
     if (m === "about") return openAbout();
     if (m === "directory") return openDirectory();
     if (m === "read") return QLREADER.open(1);
     setMode("map");
+    if (QLMAP.scene !== "city") QLMAP.setScene("city");
   }
 
   document.addEventListener("DOMContentLoaded", boot);

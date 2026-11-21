@@ -11,6 +11,9 @@
   8  禁用模式     map.fire("click") / innerHTML.indexOf 验证 / window._ftw / git mv -q / || true
   9  深链一致     app.js 深链语法（#m/#gl/#juan/#gate）
  10  manifest     icons 三枚存在，manifest 引用一致
+ 11  文档同步     ANALYSIS.md 新于论文 PDF 即红（改 md 必重排 build_paper_pdf.py）
+ 12  导出同口径   exports/ 四 CSV 行数=四表 · KML/GeoJSON 要素=94 · 皆含 derived 注记
+ 13  P2 数据哨兵  xref_sjz.js（桥双向计数/深链）· songyun.js（20 站书证）· 前端挂接
 """
 import json
 import os
@@ -152,6 +155,85 @@ def main():
     mani = read("manifest.json")
     for icon in re.findall(r'"src":\s*"(icons/[^"]+)"', mani):
         ok(os.path.exists(os.path.join(ROOT, icon)), f"manifest 引用图标缺失: {icon}")
+
+    # ── 11 文档同步（学 HHH check_docs_sync：md 改了 PDF 忘排即红） ──
+    import time
+    md = os.path.join(ROOT, "docs", "ANALYSIS.md")
+    pdf = os.path.join(ROOT, "docs", "伽蓝经纬-数字人文.pdf")
+    ok(os.path.exists(pdf), "docs/伽蓝经纬-数字人文.pdf 缺失——跑 tools/build_paper_pdf.py")
+    if os.path.exists(pdf):
+        mt, pt = os.path.getmtime(md), os.path.getmtime(pdf)
+        ok(mt <= pt + 60,
+           f"文档失同步：ANALYSIS.md（{time.strftime('%m-%d %H:%M', time.localtime(mt))}）"
+           f"新于 PDF（{time.strftime('%m-%d %H:%M', time.localtime(pt))}）——重跑 tools/build_paper_pdf.py")
+
+    # ── 12 导出同口径（前端 js/export.js 与 tools/export_data.py 同源） ──
+    exp = os.path.join(ROOT, "exports")
+    exp_files = ["伽蓝经纬-伽蓝.csv", "伽蓝经纬-城门.csv", "伽蓝经纬-里坊市.csv",
+                 "伽蓝经纬-衙署宫室.csv", "伽蓝经纬-城图.kml", "伽蓝经纬-城图.geojson"]
+    for fn in exp_files:
+        ok(os.path.exists(os.path.join(exp, fn)), f"exports/{fn} 缺失——跑 tools/export_data.py")
+    counts = {"伽蓝经纬-伽蓝.csv": len(qlz["temples"]),
+              "伽蓝经纬-城门.csv": len(qlz["gates"]),
+              "伽蓝经纬-里坊市.csv": len(qlz["wards"]),
+              "伽蓝经纬-衙署宫室.csv": len(qlz["offices"])}
+    for fn, n in counts.items():
+        p = os.path.join(exp, fn)
+        if os.path.exists(p):
+            raw = open(p, "rb").read()
+            ok(raw[:3] == b"\xef\xbb\xbf", f"exports/{fn} 缺 UTF-8 BOM")
+            lines = raw.decode("utf-8-sig").rstrip("\n").split("\n")
+            ok(len(lines) == n + 1, f"exports/{fn} {len(lines) - 1} 行 ≠ 表 {n} 行")
+            ok("derived" in lines[1] if len(lines) > 1 else False,
+               f"exports/{fn} 首数据行缺 src:derived 注记")
+    n_pts = sum(counts.values())
+    kml_p = os.path.join(exp, "伽蓝经纬-城图.kml")
+    if os.path.exists(kml_p):
+        kml = open(kml_p, encoding="utf-8").read()
+        ok(kml.count("<Placemark>") == n_pts, f"KML 要素 {kml.count('<Placemark>')} ≠ {n_pts}")
+        ok("derived" in kml, "KML 缺 derived 注记（示意坐标必须注明）")
+    gj_p = os.path.join(exp, "伽蓝经纬-城图.geojson")
+    if os.path.exists(gj_p):
+        gj = json.load(open(gj_p, encoding="utf-8"))
+        ok(len(gj["features"]) == n_pts, f"GeoJSON 要素 {len(gj['features'])} ≠ {n_pts}")
+        ok(all(f["properties"].get("src") == "derived" for f in gj["features"]),
+           "GeoJSON 存在未注 derived 的要素")
+    ok("wgs" in qlz["temples"][0], "site_data 伽蓝缺 wgs（导出锚点字段）")
+    ok("anchor" in qlz["city"], "site_data.city 缺 anchor（导出依据字段）")
+
+    # ── 13 P2 数据哨兵（互查桥 + 宋云西行 + 前端挂接） ──
+    ok(os.path.exists(os.path.join(ROOT, "data", "xref_sjz.js")),
+       "data/xref_sjz.js 缺失——跑 tools/build_xref_sjz.py")
+    ok(os.path.exists(os.path.join(ROOT, "data", "songyun.js")),
+       "data/songyun.js 缺失——跑 tools/build_songyun.py")
+    if os.path.exists(os.path.join(ROOT, "data", "xref_sjz.js")):
+        xt = read("data/xref_sjz.js")
+        head = "window.QL_SJZ = "
+        xr = json.loads(xt[xt.find(head) + len(head):].rstrip().rstrip(";"))
+        t13 = xr["totals"]
+        ok(t13["placesHit"] >= 15, f"互查桥 B 侧命中 {t13['placesHit']} < 15")
+        ok(t13["pairs"] >= 6, f"对读样例 {t13['pairs']} < 6")
+        ok(t13["waterMentions"] >= 10, f"水道提及 {t13['waterMentions']} < 10")
+        ok(all(w["href"].startswith("../SDJW/#r=") for w in xr["waters"]),
+           "互查桥深链须为相对兄弟路径 ../SDJW/#r=<id>")
+        ok(any("谷水" in w["forms"] for w in xr["waters"]), "谷水（穀水异体）须在桥内")
+        ok(xr["excluded"], "同名假阳性排除表不得为空（消歧纪律）")
+    if os.path.exists(os.path.join(ROOT, "data", "songyun.js")):
+        st = read("data/songyun.js")
+        head2 = "window.QL_SONGYUN = "
+        sy = json.loads(st[st.find(head2) + len(head2):].rstrip().rstrip(";"))
+        ok(sy["meta"]["stops"] == 20, f"西行 {sy['meta']['stops']} 站 ≠ 20")
+        ok(sy["meta"]["chars"] == stats["songyun_chars"], "西行行纪字数与 stats 不一致")
+        ok(all(s["cite"] for s in sy["stops"]), "西行站存在空书证")
+        ok(all(s["src"] == "derived" and s["conf"] == "infer" for s in sy["stops"]),
+           "西行站坐标须 src:derived·conf:infer")
+        ok(any("存疑" in s["today"] for s in sy["stops"]), "波斯存疑注记须保留")
+    for frag, why in [("js/export.js", "名录导出模块未挂 index.html"),
+                      ("data/songyun.js", "宋云西行数据未挂 index.html")]:
+        ok(frag in idx, why)
+    stats_js = read("js/stats.js")
+    ok("引水经注" in stats_js and "xref_sjz.js" in stats_js, "计量面板缺「引水经注」页签")
+    ok("westOn" in app and "#m=west" in app, "西行场景/深链未接入 app.js")
 
     # ── 报告 ──
     n = len(checks)
