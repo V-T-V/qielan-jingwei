@@ -59,12 +59,18 @@ def data_asserts():
     sy = json.loads(syt[syt.find(head2) + len(head2):].rstrip().rstrip(";"))
     assert sy["meta"]["stops"] == 20 and sy["meta"]["chars"] == m["songyun_chars"], "西行结构化异常"
     kml = open(os.path.join(ROOT, "exports", "伽蓝经纬-城图.kml"), encoding="utf-8").read()
-    assert kml.count("<Placemark>") == 43 + 15 + 24 + 12, "KML 要素数与四表不齐"
+    site = open(os.path.join(ROOT, "data", "site_data.js"), encoding="utf-8").read()
+    h = "const QLZ = "
+    qlz_live = json.loads(site[site.find(h) + len(h):].rstrip().rstrip(";"))
+    n_pts = (len(qlz_live["temples"]) + len(qlz_live["gates"]) +
+             len(qlz_live["wards"]) + len(qlz_live["offices"]))
+    assert kml.count("<Placemark>") == n_pts, \
+        f"KML 要素数 {kml.count('<Placemark>')} ≠ 四表 {n_pts}"
     print(f"伽蓝 43（11/12/8/10/2）· 宋云行纪 {m['songyun_chars']:,} 字 · "
           f"总 {stats['total_chars']:,} 字 · 御道 {stats['words']['御道']} 次 · "
-          f"城门提及 {len(stats['gate_mentions'])} 门")
+          f"城门提及 {len(stats['gate_mentions'])} 门 · 里坊/市 {len(qlz_live['wards'])}")
     print(f"P2：桥命中 {xr['totals']['placesHit']}/对读 {xr['totals']['pairs']} 对 · "
-          f"西行 {sy['meta']['stops']} 站 · 导出 94 点（CSV×4+KML+GeoJSON） · 论文 PDF 在账")
+          f"西行 {sy['meta']['stops']} 站 · 导出 {n_pts} 点（CSV×4+KML+GeoJSON） · 论文 PDF 在账")
 
 
 def account_sums():
