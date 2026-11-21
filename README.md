@@ -94,3 +94,5 @@ python run_tests.py               # lint + 数据断言 + 断言页清单
 
 `python run_tests.py` 全绿后，`tests/assert_data.html`（22 项）与 `tests/assert_reader.html`
 （12 项，iframe 驱动主流程）于 9500 端口打开，title=PASS 即绿。截图证据：`docs/img/`。
+
+学术引用：[CITATION.cff](CITATION.cff)（CFF 1.2.0 · dataset）——构建产物指纹账本另见 [SHA256SUMS](SHA256SUMS)，`python tools/build_sums.py` 重算、`run_tests.py` 对账。
