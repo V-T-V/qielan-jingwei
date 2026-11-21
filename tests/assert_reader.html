@@ -14,7 +14,7 @@ li{list-style:none;margin:4px 0}
 <body>
 <h2>巡城断言 · 伽蓝经纬（index.html 主流程 DOM 级）</h2>
 <ul id="out"></ul>
-<div id="stage"><iframe id="fr" src="../index.html#m=map" width="900" height="700"></iframe></div>
+<div id="stage"><iframe id="fr" width="900" height="700"></iframe></div>
 <script>
 const out = document.getElementById("out");
 let n = 0, bad = 0;
@@ -30,6 +30,9 @@ const fr = document.getElementById("fr");
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function run() {
+  /* 时间戳破浏览器启发式缓存（http.server 无 Cache-Control） */
+  const bust = "?fresh=" + Date.now();
+  await new Promise(r => { fr.onload = r; fr.src = "../index.html" + bust + "#m=map"; });
   await sleep(2600);                       /* 等 boot+数据 */
   let doc;
   try { doc = fr.contentDocument; } catch (e) { doc = null; }
@@ -39,7 +42,7 @@ async function run() {
   const boot = doc.getElementById("boot");
   assert(!!boot, "序幕 DOM 存在");
   /* 深链：伽蓝详情 */
-  fr.src = "../index.html#gl=" + encodeURIComponent("永宁寺") + "#r=" + Date.now();
+  fr.src = "../index.html" + bust + "#gl=" + encodeURIComponent("永宁寺");
   await sleep(2000);
   doc = fr.contentDocument;
   const vname = doc.getElementById("vname");
@@ -51,7 +54,7 @@ async function run() {
   assert(pbody.textContent.includes("九层浮图"), "原文正文完整（「九层浮图」在场）");
   assert(doc.getElementById("panel").classList.contains("open"), "详情面板 open");
   /* 深链：巡城卷二 */
-  fr.src = "../index.html#m=read#juan=2#r=" + Date.now();
+  fr.src = "../index.html" + bust + "#m=read#juan=2";
   await sleep(2200);
   doc = fr.contentDocument;
   const entries = doc.querySelectorAll("#pbody .entry");
@@ -62,7 +65,7 @@ async function run() {
   const rprog = doc.getElementById("rprog");
   assert(rprog && rprog.textContent.includes("卷2"), `巡城进度条「${rprog && rprog.textContent}」`);
   /* 深链：宋云行纪（卷五特殊块） */
-  fr.src = "../index.html#m=read#juan=5#r=" + Date.now();
+  fr.src = "../index.html" + bust + "#m=read#juan=5";
   await sleep(2200);
   doc = fr.contentDocument;
   assert(doc.getElementById("pbody").textContent.includes("宋云"),

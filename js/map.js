@@ -67,8 +67,8 @@ const QLMAP = (() => {
     label(1550, 3480, "宫城", "citylab", layers.wall);
     label(250, 3400, "金墉城", "citylab small", layers.wall);
     /* 铜驼中轴 */
-    L.polyline(c.axis.map(ll), { color: "#b23a2e", weight: 2.4, dashArray: "10 6",
-      opacity: .8 }).bindTooltip("中轴御道（宣阳门—阊阖门）", { direction: "top" })
+    L.polyline(c.axis.map(ll), { color: "#a8874a", weight: 2.6, dashArray: "10 6",
+      opacity: .9 }).bindTooltip("中轴御道（宣阳门—阊阖门）", { direction: "top" })
       .addTo(layers.axis);
     label(1400, 1100, "御  道", "axislab", layers.axis);
   }

@@ -45,7 +45,7 @@ body{
 .citylab.small{font-size:11px;letter-spacing:2px;color:#4d4570}
 .riverlab{color:#38607d;font-size:12px;letter-spacing:3px}
 .manglab{letter-spacing:14px;font-size:15px;color:#8d8163}
-.axislab{color:var(--cinnabar);font-size:12px;letter-spacing:6px}
+.axislab{color:var(--gold-d);font-size:12px;letter-spacing:6px}
 .gatesym{display:inline-block;transform:translate(-50%,-50%);
   font-family:KaiTi,serif;font-size:12.5px;letter-spacing:1px;color:#f5f2e4;
   background:#5c5138;padding:1px 5px;border:1px solid #3f3826;border-radius:1px;

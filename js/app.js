@@ -16,7 +16,7 @@ const QLAPP = (() => {
     if (ensureSections._p) return ensureSections._p;
     ensureSections._p = new Promise((ok, bad) => {
       const s = document.createElement("script");
-      s.src = "data/sections.js?v=3";
+      s.src = "data/sections.js?v=6";
       s.onload = ok;
       s.onerror = () => bad(new Error("sections.js 加载失败"));
       document.head.appendChild(s);
@@ -55,6 +55,7 @@ const QLAPP = (() => {
     document.querySelectorAll("#modes .mode").forEach(b =>
       b.addEventListener("click", () => act(b.dataset.mode)));
     document.getElementById("pclose").addEventListener("click", closePanel);
+    document.getElementById("fitlink").addEventListener("click", () => QLMAP.fitAll());
     document.getElementById("wanderlink").addEventListener("click", () => {
       const ts = QLZ.temples;
       openTemple(ts[Math.floor(Math.random() * ts.length)].id);
@@ -131,7 +132,7 @@ const QLAPP = (() => {
       `<span>条目 ${t.chars} 字</span>` +
       `<span>全书出场 ${t.mention} 次</span>` +
       `<span>坐标 ${t.conf === "text" ? "原文明载方位" : "区位示意"}</span>`;
-    const sec = window.QL_SECTIONS && QL_SECTIONS[t.id];
+    const sec = (typeof QL_SECTIONS !== "undefined") && QL_SECTIONS[t.id];
     const host = document.getElementById("pbody");
     host.className = "";
     host.innerHTML =

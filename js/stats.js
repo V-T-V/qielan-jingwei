@@ -1,7 +1,7 @@
 /* ═══════════ 伽蓝经纬 · 计量面板（数字全部出自 docs/stats.js 脚本产物） ═══════════ */
 
 const QLSTATS = (() => {
-  const S = () => window.QL_STATS;
+  const S = () => QL_STATS;   /* const 不上 window——直引 */
 
   function open() {
     QLAPP.setMode("stats");
