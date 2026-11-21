@@ -1,5 +1,7 @@
 # 伽蓝经纬 · Qielan Jingwei
 
+[![CI](https://github.com/V-T-V/qielan-jingwei/actions/workflows/ci.yml/badge.svg)](https://github.com/V-T-V/qielan-jingwei/actions/workflows/ci.yml)
+
 北魏·杨衒之《洛阳伽蓝记》五卷数字人文平台——方舆经纬（[D:\W_A_W\HHH](../HHH)·点织明末版图）、
 水道经纬（[D:\W_A_W\SDJW](../SDJW)·线溯北魏江河）的姊妹项目。
 同一套方法论，第三种空间诗学：**以点（伽蓝）织一座城**——北魏洛阳，一城之内见一代之盛衰。
