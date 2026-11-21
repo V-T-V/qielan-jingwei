@@ -7,6 +7,8 @@ import io
 import json
 import math
 import os
+import subprocess
+import sys
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
@@ -15,11 +17,18 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import (BaseDocTemplate, Frame, HRFlowable, KeepTogether,
+from reportlab.platypus import (BaseDocTemplate, Frame, HRFlowable, Image, KeepTogether,
                                 PageTemplate, Paragraph, Spacer, Table, TableStyle)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "伽蓝经纬-数字人文.pdf")
+
+# 插图缺失时自动重建（管线可重入：stats.json → build_paper_figs.py，学 HHH）
+FIGS_DIR = os.path.join(ROOT, "docs", "figs")
+NEED_FIGS = ["fig1_vols.png", "fig2_gates.png"]
+if not all(os.path.isfile(os.path.join(FIGS_DIR, f)) for f in NEED_FIGS):
+    subprocess.run([sys.executable, "-I", os.path.join(ROOT, "tools", "build_paper_figs.py")],
+                   check=True)
 
 pdfmetrics.registerFont(TTFont("KaiTi", r"C:\Windows\Fonts\STKAITI.TTF"))
 pdfmetrics.registerFont(TTFont("YaHei", r"C:\Windows\Fonts\msyh.ttc", subfontIndex=0))
@@ -85,6 +94,11 @@ def tbl(headers, rows, widths, caption=None, left_cols=()):
     if caption:
         out.append(Paragraph(caption, S["cap"]))
     return KeepTogether(out)
+
+
+def fig(fname, h_mm, caption):
+    img = Image(os.path.join(FIGS_DIR, fname), width=AW, height=h_mm * mm, hAlign="CENTER")
+    return KeepTogether([Spacer(1, 2 * mm), img, Paragraph(caption, S["cap"])])
 
 
 def footer(cv, doc):
@@ -210,7 +224,10 @@ def main():
               "表 1　卷帙与条目分布（stats.py 产物）"),
           P("城东卷独厚（%s 字）：建春门—东阳门—青阳门外伽蓝与里坊交错，叙事最密；"
             "城南卷最薄（%s 字）而景明寺一寺独大。卷部不只是分目，更是城市象限——"
-            "这为「按卷巡城」的阅读体验提供了数据根据。" % (f"{vc['2']:,}", f"{vc['3']:,}"))]
+            "这为「按卷巡城」的阅读体验提供了数据根据。" % (f"{vc['2']:,}", f"{vc['3']:,}")),
+          fig("fig1_vols.png", 92.1,
+              f"图 1　卷帙篇幅——城东独厚（{vc['2']:,} 字）· 城南最薄（{vc['3']:,} 字）"
+              f"（docs/stats.json: vol_chars）")]
 
     # ── 四、空间结构 ──
     gate_rows = [[g, str(n)] for g, n in
@@ -227,7 +244,10 @@ def main():
               [.28, .22, .28, .22], "表 2　城门提及（前八，stats.py）"),
           P(f"十三门谱系序文自载（东3建春/东阳/青阳 · 南4开阳/平昌/宣阳/津阳 · 西4西明/西阳/阊阖/承明 · "
             f"北2大夏/广莫），每门附原文书证；阊阖门一名二实（西墙汉上西门与宫城正门）本站分列。"
-            f"里坊/市提及以建阳里、孝义里、永桥为最——城东里坊带与洛水永桥市是次级空间骨架。")]
+            f"里坊/市提及以建阳里、孝义里、永桥为最——城东里坊带与洛水永桥市是次级空间骨架。"),
+          fig("fig2_gates.png", 118.1,
+              "图 2　城门提及频次（十四名全谱）——阊阖门（仪礼轴线起点）与建春门（城东伽蓝带锚点）双锚"
+              "（docs/stats.json: gate_mentions）")]
 
     # ── 五、文本计量 ──
     E += [P("五、文本计量", "h1"),
