@@ -1,0 +1,50 @@
+{
+ "source": "http://www.guoxue123.com/shibu/0301/00lyjlj",
+ "source_note": "维基文库 zh.wikisource.org 本网络不可达，依 SPEC 数据源次序回退国学导航本（四部丛刊影印整理底本，GB18030）",
+ "vols": [
+  {
+   "num": "000",
+   "title": "序",
+   "chars": 1165,
+   "paras": 8,
+   "cached": false
+  },
+  {
+   "num": "001",
+   "title": "卷一·城内",
+   "chars": 7776,
+   "paras": 41,
+   "cached": false
+  },
+  {
+   "num": "002",
+   "title": "卷二·城东",
+   "chars": 8290,
+   "paras": 32,
+   "cached": false
+  },
+  {
+   "num": "003",
+   "title": "卷三·城南",
+   "chars": 5485,
+   "paras": 18,
+   "cached": false
+  },
+  {
+   "num": "004",
+   "title": "卷四·城西",
+   "chars": 6988,
+   "paras": 26,
+   "cached": false
+  },
+  {
+   "num": "005",
+   "title": "卷五·城北",
+   "chars": 6295,
+   "paras": 39,
+   "cached": false
+  }
+ ],
+ "total_chars": 35999,
+ "fetched_at": "2026-11-21 21:55:25"
+}
