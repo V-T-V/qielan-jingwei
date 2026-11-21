@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>伽蓝经纬 · 数据断言</title>
+<style>
+body{font-family:KaiTi,serif;background:#241f17;color:#e8e0c8;padding:24px;line-height:1.8}
+h2{font-weight:400;letter-spacing:4px;border-bottom:1px solid #a8874a;padding-bottom:6px}
+.pass{color:#8fae8d}.fail{color:#e08a7e;font-weight:bold}
+li{list-style:none;margin:4px 0}
+</style>
+</head>
+<body>
+<h2>数据断言 · 伽蓝经纬</h2>
+<ul id="out"></ul>
+<script src="../data/site_data.js?v=3"></script>
+<script src="../data/stats.js?v=3"></script>
+<script src="../data/sections.js?v=3"></script>
+<script>
+const out = document.getElementById("out");
+let n = 0, bad = 0;
+function assert(cond, label) {
+  n++;
+  const li = document.createElement("li");
+  li.textContent = (cond ? "✓ " : "✗ ") + label;
+  li.className = cond ? "pass" : "fail";
+  if (!cond) bad++;
+  out.appendChild(li);
+}
+const m = QLZ.meta;
+assert(m.templeEntries === 43, `伽蓝条目 ${m.templeEntries} = 43`);
+assert(QLZ.temples.length === 43, `temples 数组 ${QLZ.temples.length} = 43`);
+assert(QLZ.gates.length === 15, `城门总数 ${QLZ.gates.length} = 15`);
+assert(QLZ.gates.filter(g => g.wall !== "宫").length === 13, "城墙门 13（序：东3南4西4北2）");
+assert(QLZ.gates.filter(g => g.wall === "宫").length === 2, "宫城门 2（阊阖/千秋）");
+assert(!!QLZ.gates.find(g => g.name === "平昌门"), "平昌门在列（序「次西曰平昌门」）");
+assert(QLZ.wards.length >= 20, `里坊/市 ${QLZ.wards.length} ≥ 20`);
+assert(QLZ.offices.length >= 10, `衙署 ${QLZ.offices.length} ≥ 10`);
+assert(m.totalChars === QL_STATS.total_chars, `前端总字数 ${m.totalChars} 与脚本产物一致`);
+assert(m.totalChars >= 35000, `总字数 ${m.totalChars} ≥ 35000`);
+assert(m.textConf === 40, `原文明载方位 ${m.textConf} = 40`);
+assert(m.inferConf === 3, `区位示意 ${m.inferConf} = 3`);
+assert(QLZ.temples.every(t => t.src === "derived"), "全部伽蓝坐标 src:derived");
+assert(QLZ.temples.every(t => typeof t.loc === "string" && t.loc.length > 0), "全部伽蓝有位置依据字段");
+assert(QLZ.gates.every(g => g.att.length > 4), "全部城门有书证");
+assert(Object.keys(QL_SECTIONS).length === 53, `阅读块 ${Object.keys(QL_SECTIONS).length} = 53`);
+assert(QLZ.temples.every(t => !!QL_SECTIONS[t.id]), "每座伽蓝挂接原文块");
+assert(["preface","songyun","summary"].every(k =>
+  Object.values(QL_SECTIONS).some(b => b.kind === k)), "序/宋云行纪/京师总述特殊块在");
+const yn = QLZ.temples.find(t => t.name === "永宁寺");
+assert(yn && yn.vol === 1 && yn.pos[1] < 2550 && yn.pos[1] > 1800,
+  `永宁寺在阊阖门南一里（y=${yn && yn.pos[1]}，阊阖门 y=2550）`);
+const baima = QLZ.temples.find(t => t.name === "白马寺");
+assert(baima && baima.pos[0] < -1000, `白马寺在西阳门外三里（x=${baima && baima.pos[0]} < 0）`);
+const jm = QLZ.gates.find(g => g.name === "建春门");
+assert(jm && jm.pos[0] === 2800, `建春门在东墙（x=${jm && jm.pos[0]}）`);
+const vols = {};
+QLZ.temples.forEach(t => vols[t.vol] = (vols[t.vol] || 0) + 1);
+assert(JSON.stringify(vols) === JSON.stringify({1:11,2:12,3:8,4:10,5:2}),
+  `分卷 11/12/8/10/2（实际 ${JSON.stringify(vols)}）`);
+const title = bad === 0 ? `PASS (${n})` : `FAIL (${bad}/${n})`;
+document.title = title;
+const li = document.createElement("li");
+li.textContent = `—— ${title}`;
+li.className = bad === 0 ? "pass" : "fail";
+out.appendChild(li);
+</script>
+</body>
+</html>

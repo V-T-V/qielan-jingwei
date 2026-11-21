@@ -58,8 +58,9 @@ def main():
     mentions_top = sorted(mentions.items(), key=lambda x: -x[1])
 
     # ── 城门提及 ──
-    gate_names = ["建春门", "东阳门", "青阳门", "清阳门", "开阳门", "宣阳门", "津阳门",
-                  "西阳门", "西明门", "承明门", "大夏门", "广莫门", "阊阖门", "千秋门"]
+    gate_names = ["建春门", "东阳门", "青阳门", "清阳门", "开阳门", "平昌门", "宣阳门",
+                  "津阳门", "西阳门", "西明门", "承明门", "大夏门", "广莫门", "阊阖门",
+                  "千秋门"]
     gate_mentions = {g: len(re.findall(g, whole)) for g in gate_names}
     gate_mentions["青阳门(合清阳门)"] = gate_mentions.pop("青阳门") + gate_mentions.pop("清阳门")
 

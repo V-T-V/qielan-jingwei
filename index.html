@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>伽蓝经纬 · 洛阳伽蓝记五卷全城</title>
+<meta name="description" content="北魏杨衒之《洛阳伽蓝记》五卷数字人文平台——四十三伽蓝点织北魏洛阳城，按卷巡城、原文对读、全文检索">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="vendor/leaflet.css?v=3">
+<link rel="stylesheet" href="css/main.css?v=3">
+</head>
+<body>
+
+<div id="map"></div>
+<div class="paper-wash"></div>
+
+<!-- 顶栏模式 -->
+<nav id="modes">
+  <button class="mode active" data-mode="map">舆图</button><span>·</span>
+  <button class="mode" data-mode="read">巡城</button><span>·</span>
+  <button class="mode" data-mode="directory">名录</button><span>·</span>
+  <button class="mode" data-mode="stats">计量</button><span>·</span>
+  <button class="mode" data-mode="about">关于</button>
+</nav>
+<div id="searchwrap">
+  <input id="search" type="text" placeholder="检全书五卷——寺名·地名·人名，如 永宁寺 / 铜驼 / 灵太后" autocomplete="off">
+  <div id="sresults"></div>
+</div>
+<aside id="rail">
+  <div class="rt" id="railtitle">伽蓝纲目<small id="railsub">四十三寺</small></div>
+  <div id="raillist"></div>
+</aside>
+
+<!-- 右幅面板 -->
+<section id="panel">
+  <button id="pclose" title="收起">✕</button>
+  <div class="vtitle"><div class="vname" id="vname"></div><div class="vseal" id="vseal">伽蓝</div></div>
+  <div id="pmeta"></div>
+  <div id="pbody"></div>
+</section>
+
+<!-- 巡城阅读条 -->
+<div id="readerbar" class="hidden">
+  <button id="rprev" title="上一条目">◀</button>
+  <div id="rprog">按卷巡城</div>
+  <button id="rnext" title="下一条目">▶</button>
+  <select id="rjvol" title="选卷"></select>
+  <button id="rtts" title="自当前条目朗读（巡城听书）">▷ 朗读</button>
+</div>
+
+<footer id="fbar">
+  <button class="ftool" id="wanderlink" title="随机择一伽蓝巡礼">⚑ 漫游</button>
+  <button class="ftool" id="bmlink" title="书签（LocalStorage，浏览器本地保存）">✿ 书签</button>
+  <button class="ftool" id="nightlink" title="夜读模式（墨色护眼）">☾ 夜读</button>
+  <span class="sep"></span><span id="modelabel">舆图</span><span class="sep"></span>
+  <span id="modenote">四十三伽蓝 · 十三门 · 城市示意平面</span>
+  <span class="sep"></span><span class="fb" id="bookstat"></span>
+  <div class="right"><span id="swstate" title="Service Worker 就绪后：全书离线可用" style="display:none"></span><span>文本 · 国学导航</span><span>城图 · 自绘示意</span></div>
+</footer>
+
+<!-- 序幕 -->
+<div id="boot">
+  <div class="bt">
+    <div class="seal-row"><span class="bseal">伽</span><span class="bseal b2">蓝</span></div>
+    <h1>伽蓝经纬</h1>
+    <p class="sub">北魏 · 杨衒之《洛阳伽蓝记》五卷 · 四十三伽蓝</p>
+    <div class="pagoda"><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="quote">「王侯贵臣，弃象马如脱屣；庶士豪家，舍资财若遗迹。」</p>
+    <button class="go">入 城</button>
+    <p class="hint">按卷巡城 · 原文对读 · 全文检索 · 佛寺名录</p>
+  </div>
+</div>
+
+<script src="vendor/leaflet.js"></script>
+<script src="data/site_data.js?v=3"></script>
+<script src="data/stats.js?v=3"></script>
+<script src="js/config.js?v=3"></script>
+<script src="js/map.js?v=3"></script>
+<script src="js/rail.js?v=3"></script>
+<script src="js/reader.js?v=3"></script>
+<script src="js/search.js?v=3"></script>
+<script src="js/stats.js?v=3"></script>
+<script src="js/bookmarks.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
+</body>
+</html>

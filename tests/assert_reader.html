@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>伽蓝经纬 · 巡城断言</title>
+<style>
+body{font-family:KaiTi,serif;background:#241f17;color:#e8e0c8;padding:24px;line-height:1.8}
+h2{font-weight:400;letter-spacing:4px;border-bottom:1px solid #a8874a;padding-bottom:6px}
+.pass{color:#8fae8d}.fail{color:#e08a7e;font-weight:bold}
+li{list-style:none;margin:4px 0}
+#stage{position:fixed;left:-4000px;top:0;width:900px;height:700px}
+</style>
+</head>
+<body>
+<h2>巡城断言 · 伽蓝经纬（index.html 主流程 DOM 级）</h2>
+<ul id="out"></ul>
+<div id="stage"><iframe id="fr" src="../index.html#m=map" width="900" height="700"></iframe></div>
+<script>
+const out = document.getElementById("out");
+let n = 0, bad = 0;
+function assert(cond, label) {
+  n++;
+  const li = document.createElement("li");
+  li.textContent = (cond ? "✓ " : "✗ ") + label;
+  li.className = cond ? "pass" : "fail";
+  if (!cond) bad++;
+  out.appendChild(li);
+}
+const fr = document.getElementById("fr");
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function run() {
+  await sleep(2600);                       /* 等 boot+数据 */
+  let doc;
+  try { doc = fr.contentDocument; } catch (e) { doc = null; }
+  assert(!!doc, "iframe 加载 index.html");
+  if (!doc) return finish();
+  /* 序幕在场且可入城 */
+  const boot = doc.getElementById("boot");
+  assert(!!boot, "序幕 DOM 存在");
+  /* 深链：伽蓝详情 */
+  fr.src = "../index.html#gl=" + encodeURIComponent("永宁寺") + "#r=" + Date.now();
+  await sleep(2000);
+  doc = fr.contentDocument;
+  const vname = doc.getElementById("vname");
+  assert(vname && vname.textContent === "永宁寺",
+    `深链 #gl=永宁寺 → 面板「${vname && vname.textContent}」`);
+  const pbody = doc.getElementById("pbody");
+  assert(pbody && pbody.textContent.includes("灵太后胡氏所立"),
+    "永宁寺原文段挂接（含「灵太后胡氏所立」）");
+  assert(pbody.textContent.includes("九层浮图"), "原文正文完整（「九层浮图」在场）");
+  assert(doc.getElementById("panel").classList.contains("open"), "详情面板 open");
+  /* 深链：巡城卷二 */
+  fr.src = "../index.html#m=read#juan=2#r=" + Date.now();
+  await sleep(2200);
+  doc = fr.contentDocument;
+  const entries = doc.querySelectorAll("#pbody .entry");
+  assert(entries.length >= 15, `巡城卷二渲染 ${entries.length} 块 ≥ 15`);
+  const firstTemple = doc.querySelector("#pbody .entry .ename");
+  assert(firstTemple && firstTemple.textContent === "明悬尼寺",
+    `卷二首伽蓝「${firstTemple && firstTemple.textContent}」= 明悬尼寺`);
+  const rprog = doc.getElementById("rprog");
+  assert(rprog && rprog.textContent.includes("卷2"), `巡城进度条「${rprog && rprog.textContent}」`);
+  /* 深链：宋云行纪（卷五特殊块） */
+  fr.src = "../index.html#m=read#juan=5#r=" + Date.now();
+  await sleep(2200);
+  doc = fr.contentDocument;
+  assert(doc.getElementById("pbody").textContent.includes("宋云"),
+    "卷五含宋云行纪");
+  /* 检索 */
+  const se = doc.getElementById("search");
+  se.value = "灵太后";
+  doc.defaultView.QLSEARCH.run();
+  await sleep(1400);
+  const srs = doc.querySelectorAll("#sresults .sr[data-i]");
+  assert(srs.length >= 1, `检索「灵太后」得 ${srs.length} 条 ≥ 1`);
+  se.value = "浮图";
+  doc.defaultView.QLSEARCH.run();
+  await sleep(1400);
+  const srs2 = doc.querySelectorAll("#sresults .sr[data-i]");
+  assert(srs2.length >= 5, `检索「浮图」得 ${srs2.length} 条 ≥ 5`);
+  finish();
+}
+
+function finish() {
+  const title = bad === 0 ? `PASS (${n})` : `FAIL (${bad}/${n})`;
+  document.title = title;
+  const li = document.createElement("li");
+  li.textContent = `—— ${title}`;
+  li.className = bad === 0 ? "pass" : "fail";
+  out.appendChild(li);
+}
+
+run();
+</script>
+</body>
+</html>
