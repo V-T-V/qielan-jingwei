@@ -13,7 +13,7 @@ const QLREADER = (() => {
     if (ensureSections._p) return ensureSections._p;
     ensureSections._p = new Promise((ok, bad) => {
       const s = document.createElement("script");
-      s.src = "data/sections.js?v=9";
+      s.src = "data/sections.js?v=10";
       s.onload = ok;
       s.onerror = () => bad(new Error("sections.js 加载失败"));
       document.head.appendChild(s);

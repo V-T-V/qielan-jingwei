@@ -80,7 +80,7 @@ const QLSTATS = (() => {
     host0.innerHTML = `<div class="sect"><p class="kv">互查数据装载中…</p></div>`;
     sjzOpen = new Promise(ok => {
       const s = document.createElement("script");
-      s.src = "data/xref_sjz.js?v=9";
+      s.src = "data/xref_sjz.js?v=10";
       s.onload = ok;
       s.onerror = ok;
       document.head.appendChild(s);

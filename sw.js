@@ -3,19 +3,19 @@
    SHELL 外壳预存 · TEXTS 全文懒载（首查后整本离线）
    VERSION 与 index.html 的 ?v 同步递升（教训：勿加 ignoreSearch 把页面钉死旧版） */
 
-const VERSION = "v9";
+const VERSION = "v10";
 const SHELL = `qlg-${VERSION}-shell`;
 const TEXTS = `qlg-${VERSION}-texts`;
 
 const SHELL_FILES = [
   "./", "./index.html", "./manifest.json",
-  "./css/main.css?v=9",
-  "./vendor/leaflet.js", "./vendor/leaflet.css",
-  "./data/site_data.js?v=9", "./data/stats.js?v=9", "./data/sections.js?v=9", "./data/songyun.js?v=9",
+  "./css/main.css?v=10",
+  "./vendor/leaflet.js", "./vendor/leaflet.css?v=10",
+  "./data/site_data.js?v=10", "./data/stats.js?v=10", "./data/sections.js?v=10", "./data/songyun.js?v=10",
   "./icons/icon-192.png", "./icons/icon-512.png",
-  "./js/config.js?v=9", "./js/map.js?v=9", "./js/rail.js?v=9",
-  "./js/reader.js?v=9", "./js/search.js?v=9", "./js/stats.js?v=9",
-  "./js/bookmarks.js?v=9", "./js/export.js?v=9", "./js/app.js?v=9",
+  "./js/config.js?v=10", "./js/map.js?v=10", "./js/rail.js?v=10",
+  "./js/reader.js?v=10", "./js/search.js?v=10", "./js/stats.js?v=10",
+  "./js/bookmarks.js?v=10", "./js/export.js?v=10", "./js/app.js?v=10",
 ];
 
 self.addEventListener("install", e => {
@@ -27,7 +27,8 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => !k.endsWith(VERSION)).map(k => caches.delete(k)))
+      /* 精确保留本版两仓（承旗舰：endsWith(VERSION) 会误删自身 *-shell/*-texts——离线首验实证） */
+      Promise.all(keys.filter(k => ![SHELL, TEXTS].includes(k)).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });

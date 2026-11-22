@@ -28,7 +28,7 @@ const QLSEARCH = (() => {
       let pending = 6;
       for (let v = 0; v <= 5; v++) {
         const s = document.createElement("script");
-        s.src = `data/text/v${v}.js?v=9`;
+        s.src = `data/text/v${v}.js?v=10`;
         s.onload = s.onerror = () => { if (--pending === 0) { loaded = true; ok(); } };
         document.head.appendChild(s);
       }
